@@ -1,0 +1,8 @@
+# Generated System Health Reports
+SystemHealthReport-*.html
+
+# PowerShell temporary files
+*.tmp
+
+# VS Code local settings
+.vscode/
