@@ -174,3 +174,13 @@ This project is also part of my goal to improve my PowerShell skills by building
 **SystemHealthReport.ps1: V1 Complete**
 
 Development and improvements are ongoing.
+
+## Screenshots
+
+### System Health Overview
+
+![System Health Overview](screenshots/system-health-top.png)
+
+### Event Log and Service Checks
+
+![Event Log and Service Checks](screenshots/system-health-events.png)
