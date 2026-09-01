@@ -6,3 +6,7 @@ SystemHealthReport-*.html
 
 # VS Code local settings
 .vscode/
+
+# Generated reports
+reports/
+SystemHealthReport-*.html
