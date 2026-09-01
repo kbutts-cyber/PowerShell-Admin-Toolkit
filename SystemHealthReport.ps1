@@ -1,3 +1,56 @@
+<#
+.SYNOPSIS
+    Generates a Windows system health report.
+
+.DESCRIPTION
+    Collects system information including CPU, memory, disk usage,
+    storage health, network configuration, Windows service status,
+    and recent Critical/Error events.
+
+    The script displays the results in PowerShell and generates
+    a timestamped HTML report.
+
+.PARAMETER OutputPath
+    Specifies the folder where the HTML report will be saved.
+
+    If no OutputPath is provided, the report is saved in the same
+    folder as the script.
+
+.EXAMPLE
+    .\SystemHealthReport.ps1
+
+    Runs the report and saves the HTML file in the script folder.
+
+.EXAMPLE
+    .\SystemHealthReport.ps1 -OutputPath "C:\Reports"
+
+    Runs the report and saves the HTML file in C:\Reports.
+.PARAMETER SkipEventLogs
+    Skips the Windows System event log check.
+
+.EXAMPLE
+    .\SystemHealthReport.ps1 -SkipEventLogs
+
+    Generates the report without checking recent Critical or Error events.
+
+.NOTES
+    Version: 1.1
+#>
+
+param(
+    [string]$OutputPath,
+    [switch]$SkipEventLogs
+)
+
+if (-not $OutputPath) {
+    $OutputPath = $PSScriptRoot
+}
+if (-not (Test-Path $OutputPath)) {
+    Write-Host "Error: Output Path does not exist: $OutputPath"
+    exit 
+}
+
+
 Write-Host ""
 Write-Host "========================================"
 Write-Host "          SYSTEM HEALTH REPORT"
@@ -132,26 +185,33 @@ Write-Host "DNS Client: $($DNSClient.Status)"
 Write-Host ""
 Write-Host "--- RECENT SYSTEM EVENTS ---"
 
-$RecentEvents = Get-WinEvent -FilterHashtable @{
-    LogName   = 'System'
-    Level     = 1,2
-    StartTime = (Get-Date).AddDays(-7)
-} -MaxEvents 5 -ErrorAction SilentlyContinue
+if (-not $SkipEventLogs) {
 
-Write-Host "Recent Critical/Error Events:"
+    $RecentEvents = Get-WinEvent -FilterHashtable @{
+        LogName   = 'System'
+        Level     = 1,2
+        StartTime = (Get-Date).AddDays(-7)
+    } -MaxEvents 5 -ErrorAction SilentlyContinue
 
-if ($RecentEvents) {
+    Write-Host "Recent Critical/Error Events:"
 
-    $RecentEvents | ForEach-Object {
+    if ($RecentEvents) {
 
-        Write-Host "$($_.TimeCreated) | $($_.LevelDisplayName) | Event ID: $($_.Id) | $($_.ProviderName)"
+        $RecentEvents | ForEach-Object {
+
+            Write-Host "$($_.TimeCreated) | $($_.LevelDisplayName) | Event ID: $($_.Id) | $($_.ProviderName)"
+        }
+    }
+    else {
+
+        Write-Host "No Critical or Error events found in the last 7 days."
     }
 }
 else {
 
-    Write-Host "No Critical or Error events found in the last 7 days."
+    $RecentEvents = $null
+    Write-Host "Event log check skipped."
 }
-
 
 Write-Host ""
 Write-Host "--- STORAGE HEALTH ---"
@@ -223,31 +283,37 @@ else {
 }
 
 
-$CriticalEventCount = @(
-    $RecentEvents |
-        Where-Object {
-            $_.LevelDisplayName -eq "Critical"
-        }
-).Count
+if ($SkipEventLogs) {
 
-$ErrorEventCount = @(
-    $RecentEvents |
-        Where-Object {
-            $_.LevelDisplayName -eq "Error"
-        }
-).Count
-
-
-if (
-    $CriticalEventCount -gt 0 -or
-    $ErrorEventCount -gt 0
-) {
-
-    $EventStatus = "Review"
+    $EventStatus = "Skipped"
 }
 else {
 
-    $EventStatus = "Healthy"
+    $CriticalEventCount = @(
+        $RecentEvents |
+            Where-Object {
+                $_.LevelDisplayName -eq "Critical"
+            }
+    ).Count
+
+    $ErrorEventCount = @(
+        $RecentEvents |
+            Where-Object {
+                $_.LevelDisplayName -eq "Error"
+            }
+    ).Count
+
+    if (
+        $CriticalEventCount -gt 0 -or
+        $ErrorEventCount -gt 0
+    ) {
+
+        $EventStatus = "Review"
+    }
+    else {
+
+        $EventStatus = "Healthy"
+    }
 }
 
 
@@ -286,11 +352,15 @@ else {
 $Timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 
 $ReportPath = Join-Path `
-    $PSScriptRoot `
+    $OutputPath `
     "SystemHealthReport-$ComputerName-$Timestamp.html"
 
 
-if ($RecentEvents) {
+if ($SkipEventLogs) {
+
+    $EventRows = "<tr><td colspan='4'>Event log check was skipped.</td></tr>"
+}
+elseif ($RecentEvents) {
 
     $EventRows = (
         $RecentEvents |

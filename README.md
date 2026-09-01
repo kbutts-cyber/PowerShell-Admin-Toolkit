@@ -102,6 +102,37 @@ After the script finishes, PowerShell will display the collected information in 
 
 The report can then be opened in a web browser.
 
+## Parameters
+
+### OutputPath
+
+Use `-OutputPath` to choose where the generated HTML report will be saved.
+
+Example:
+
+```powershell
+.\SystemHealthReport.ps1 -OutputPath "C:\Reports"
+
+If no output path is provided, the report is saved in the same folder as the script.
+
+### SkipEventLogs
+
+Use `-SkipEventLogs` to generate the report without checking recent Critical or Error events from the Windows System log.
+
+## Built-In Help
+
+The script includes PowerShell comment-based help so users can quickly see what the script does, what parameters are available, and how to run it.
+
+To view the general help:
+
+    Get-Help .\SystemHealthReport.ps1
+
+To view usage examples:
+
+    Get-Help .\SystemHealthReport.ps1 -Examples
+
+This makes the script easier to use without needing to read through the code first.
+
 ## What I Practiced
 
 Building this project gave me hands-on experience with:
